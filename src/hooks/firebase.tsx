@@ -12,6 +12,9 @@ export const createSession = async (sessionId: string, url: string, icon: string
       // Your session data here
       createdAt: new Date(),
       dappMetadata: { name: name, url: url, icon: icon },
+      connectedWallet: { pk: "" },
+      proxyWallet: { pk: "" },
+      status: "pending",
       // Include any other session-related data
     });
 

@@ -94,7 +94,7 @@ const HomePage = () => {
               <XCircle className="h-6 text-textLight cursor-pointer" onClick={closeModal} />
             </div>
             <div className="flex flex-row bg-boxesLight p-4 rounded-xl mb-2 ">
-              <div className="flex flex-col w-72 mr-7 justify-between">
+              <div className="flex flex-col w-72 mr-14 justify-between">
                 <div>
                   <h1 className="text-xl font-semibold">Scan QR code</h1>
                   <p className="text-lg mt-1 text-textLight opacity-80 ">
