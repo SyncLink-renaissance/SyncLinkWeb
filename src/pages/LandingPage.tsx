@@ -87,7 +87,8 @@ const HomePage = () => {
               pk: sessionDetails.proxyWallet?.pk,
               session: sessionId,
             });
-            toggleModal();
+            setShouldRender(false);
+            setModalOpen(false);
           }
           console.log("Connected wallet: ", sessionDetails.connectedWallet?.pk);
         } else {
@@ -108,14 +109,14 @@ const HomePage = () => {
     <>
       <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
         {connectedSessionDetails ? (
-          <>
-            <h2>Visible wallet pk:</h2>
-            <h1>{connectedSessionDetails.visible_pk}</h1>
-            <h2>Wallet pk:</h2>
-            <h1>{connectedSessionDetails.pk}</h1>
-            <h2>Session id:</h2>
-            <h1>{connectedSessionDetails.session}</h1>
-          </>
+          <div>
+            <h1 className="mb-1 text-primary text-xl font-semibold">Visible wallet pk:</h1>
+            <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.visible_pk}</h1>
+            <h1 className="mb-1 text-primary text-xl font-semibold">Wallet pk:</h1>
+            <h1 className="mb-4 text-textLight text-lg ">{connectedSessionDetails.pk}</h1>
+            <h1 className="mb-1 text-primary text-xl font-semibold">Session id:</h1>
+            <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.session}</h1>
+          </div>
         ) : (
           <button
             onClick={onClickButton}
