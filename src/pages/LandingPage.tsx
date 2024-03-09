@@ -8,17 +8,22 @@ import { XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
 import { createSession, deleteSessionById } from "../hooks/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "../config/firebaseConfig";
 
 const HomePage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(isModalOpen);
   const [sessionId, setSessionId] = useState("");
   const [genratingSession, setGenratingSession] = useState(false);
-
+  const [connectedSessionDetails, setConnectedSessionDetails] = useState<{
+    visible_pk: string;
+    pk: string;
+    session: string;
+  }>();
   const generateSessionId = () => {
     // Generate a new UUID
     const newSessionId = uuidv4();
-    setSessionId(newSessionId);
     return newSessionId;
     // Here, you would also handle storing the new session ID in your database
     // and any other logic needed to create a new session
@@ -28,6 +33,7 @@ const HomePage = () => {
   const onClickButton = async () => {
     setGenratingSession(true);
     const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
     const linkElements = document.getElementsByTagName("link");
     let icon = "";
     for (let i = 0; i < linkElements.length; i++) {
@@ -42,7 +48,7 @@ const HomePage = () => {
     toggleModal();
   };
 
-  const closeModal = async () => {
+  const closeModalAndResetSession = async () => {
     const status = await deleteSessionById(sessionId);
     console.log("status:", status);
     setSessionId("");
@@ -58,24 +64,75 @@ const HomePage = () => {
   const handleModalContentClick = (e: any) => {
     e.stopPropagation();
   };
+  useEffect(() => {
+    if (!sessionId) {
+      console.log("Session id empty");
+      return;
+    }
+
+    console.log("Setting up listener for session:", sessionId);
+    const documentRef = doc(db, "sessions", sessionId);
+
+    const unsubscribe = onSnapshot(
+      documentRef,
+      (doc) => {
+        if (doc.exists()) {
+          console.log("doc alright");
+          const sessionDetails = doc.data();
+          console.log("doc det:", sessionDetails);
+          const pk = sessionDetails.connectedWallet?.pk;
+          if (pk) {
+            setConnectedSessionDetails({
+              visible_pk: sessionDetails.connectedWallet?.pk,
+              pk: sessionDetails.proxyWallet?.pk,
+              session: sessionId,
+            });
+            toggleModal();
+          }
+          console.log("Connected wallet: ", sessionDetails.connectedWallet?.pk);
+        } else {
+          console.log("No such document!");
+        }
+      },
+      (error) => {
+        console.log("Error getting document:", error);
+      }
+    );
+
+    return () => {
+      // Clean up the listener when the component unmounts or sessionId changes
+      unsubscribe();
+    };
+  }, [sessionId]);
   return (
     <>
       <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
-        <button
-          onClick={onClickButton}
-          className="flex flex-row px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
-          {genratingSession ? (
-            <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status" />
-          ) : (
-            <img src={peerLinkSymbol} className="w-6 h-6" />
-          )}
-          <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Connect with peerlink</h1>
-        </button>
+        {connectedSessionDetails ? (
+          <>
+            <h2>Visible wallet pk:</h2>
+            <h1>{connectedSessionDetails.visible_pk}</h1>
+            <h2>Wallet pk:</h2>
+            <h1>{connectedSessionDetails.pk}</h1>
+            <h2>Session id:</h2>
+            <h1>{connectedSessionDetails.session}</h1>
+          </>
+        ) : (
+          <button
+            onClick={onClickButton}
+            className="flex flex-row px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+            {genratingSession ? (
+              <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status" />
+            ) : (
+              <img src={peerLinkSymbol} className="w-6 h-6" />
+            )}
+            <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Connect with peerlink</h1>
+          </button>
+        )}
       </div>
 
       {shouldRender && (
         <div
-          onClick={closeModal}
+          onClick={closeModalAndResetSession}
           className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center"
           style={{
             animation: `${isModalOpen ? "fadeIn" : "fadeOut"} 0.5s ease-out forwards`,
@@ -91,7 +148,7 @@ const HomePage = () => {
             }}>
             <div className="flex flex-row justify-between mb-4">
               <img src={peerLinkFull} className="h-6" />
-              <XCircle className="h-6 text-textLight cursor-pointer" onClick={closeModal} />
+              <XCircle className="h-6 text-textLight cursor-pointer" onClick={closeModalAndResetSession} />
             </div>
             <div className="flex flex-row bg-boxesLight p-4 rounded-xl mb-2 ">
               <div className="flex flex-col w-72 mr-14 justify-between">
