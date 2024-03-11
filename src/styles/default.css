@@ -77,6 +77,24 @@ svg {
 ::-webkit-scrollbar-thumb:hover {
   background: #17171b;
 }
+.loader {
+  border: 8px solid lightgray; /* Light blue border for the spinner */
+  border-top: 8px solid #217efd; /* Blue color for the spinner */
+  border-radius: 100%;
+  width: 75px;
+  height: 75px;
+  animation: spin 2s linear infinite;
+  margin: 20px auto; /* Centers the spinner within its parent */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 @keyframes fadeIn {
   from {
     opacity: 0;

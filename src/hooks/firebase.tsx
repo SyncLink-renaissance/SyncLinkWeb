@@ -55,3 +55,47 @@ export const deleteSessionToUser = async (sessionId: string, userId: string) => 
     return false;
   }
 };
+
+export const setUserTransaction = async (transaction: string, userId: string, sessionId: string) => {
+  if (!userId || !sessionId || userId === "") return false;
+  const UserRef = doc(db, "users", userId);
+
+  const tx = {
+    session: sessionId,
+    tx: transaction,
+    signature: "",
+  };
+  try {
+    await updateDoc(UserRef, {
+      tx,
+    });
+    console.log("tx updated successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error updating tx to user:", error);
+    return false;
+  }
+};
+
+export const clearUserTransaction = async (userId: string) => {
+  if (!userId) return false;
+  const UserRef = doc(db, "users", userId);
+
+  // Prepare the update to reset or clear the transaction information
+  const txReset = {
+    session: "",
+    tx: "", // Empty the transaction string or set it to whatever denotes "cleared" in your system
+    signature: "",
+  };
+
+  try {
+    await updateDoc(UserRef, {
+      tx: txReset, // Update the document to reset the transaction information
+    });
+    console.log("Transaction cleared successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error clearing transaction for user:", error);
+    return false;
+  }
+};

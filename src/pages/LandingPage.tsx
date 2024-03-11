@@ -6,23 +6,33 @@ import appstoreIcon from "../assets/images/appstoreIcon.svg";
 import googleplayIcon from "../assets/images/googleplayIcon.svg";
 import solflareIcon from "../assets/images/solflareIcon.svg";
 import phantomIcon from "../assets/images/phantomIcon.svg";
-import { ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
+import { Check, ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
-import { createSession, deleteSessionById, deleteSessionToUser } from "../hooks/firebase";
+import {
+  clearUserTransaction,
+  createSession,
+  deleteSessionById,
+  deleteSessionToUser,
+  setUserTransaction,
+} from "../hooks/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { Toast } from "../components/toast";
+import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 
 const HomePage = () => {
+  const connection = new Connection("https://mainnet.helius-rpc.com/?api-key=aa904a60-705f-4811-beab-cb00d288cc65");
+
   const [isModalOpen, setModalOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(isModalOpen);
+  const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [genratingSession, setGenratingSession] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+  const [signature, setSignature] = useState("");
   const [connectedSessionDetails, setConnectedSessionDetails] = useState<{
     visible_wallet: { pk: string; walletApp: string };
     pk: string;
@@ -42,7 +52,7 @@ const HomePage = () => {
   const showToast = (message: string) => {
     setToastMessage(message);
     setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 1250); // Automatically hide the toast after 3 seconds
+    setTimeout(() => setToastVisible(false), 1500); // Automatically hide the toast after 3 seconds
   };
 
   const onClickButton = async () => {
@@ -135,6 +145,7 @@ const HomePage = () => {
         } else {
           console.log("No such document/disconnected!");
           setConnectedSessionDetails(undefined);
+          setModalOpen(false);
           localStorage.removeItem("connectedSession");
           showToast("User disconnected");
         }
@@ -150,6 +161,31 @@ const HomePage = () => {
     };
   }, [sessionId]);
 
+  useEffect(() => {
+    if (!connectedSessionDetails?.ConnectedUserId || !isTransactionModalOpen) {
+      console.log("Required conditions not met for setting up the signature listener");
+      return;
+    }
+
+    const UserRef = doc(db, "users", connectedSessionDetails.ConnectedUserId);
+
+    const unsubscribe = onSnapshot(UserRef, (doc) => {
+      if (doc.exists()) {
+        const userData = doc.data();
+        console.log("Listening to user data changes", userData);
+        const txSignature = userData?.tx?.signature;
+        if (txSignature) {
+          console.log("Signature updated:", txSignature);
+          setSignature(txSignature);
+          // Trigger any additional actions needed after signature update
+        }
+      } else {
+        console.log("User document not found");
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
+  }, [connectedSessionDetails?.ConnectedUserId, isTransactionModalOpen]);
   const walletsIcons: { [key: string]: any } = {
     solflare: solflareIcon,
     phantom: phantomIcon,
@@ -168,36 +204,65 @@ const HomePage = () => {
       <Toast message={toastMessage} isVisible={toastVisible} onClose={() => setToastVisible(false)} />
       <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
         {connectedSessionDetails ? (
-          <div className="relative">
-            <button
-              onClick={toggleDropdown}
-              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
-              <img src={walletsIcons[connectedSessionDetails.visible_wallet.walletApp]} className="w-6 h-6" />
-              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">
-                {shortenSolanaAddress(connectedSessionDetails.visible_wallet.pk)}
-              </h1>
-              <ChevronDown color="white" />
-            </button>
-            {isDropdownOpen && (
-              <div className="absolute left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2">
-                <div
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(connectedSessionDetails.visible_wallet.pk);
-                    showToast("Copied!");
-                  }}
-                  className="flex flex-row text-textLight px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
-                  <Copy />
-                  <h1 className="ml-2 text-left text-base font-medium">Copy address</h1>
-                </div>
+          <div className="flex flex-row self-center justify-between">
+            <div className="relative mr-5">
+              <button
+                onClick={toggleDropdown}
+                className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl  ">
+                <img src={walletsIcons[connectedSessionDetails.visible_wallet.walletApp]} className="w-6 h-6" />
+                <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">
+                  {shortenSolanaAddress(connectedSessionDetails.visible_wallet.pk)}
+                </h1>
+                <ChevronDown color="white" />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2">
+                  <div
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(connectedSessionDetails.visible_wallet.pk);
+                      showToast("Copied!");
+                    }}
+                    className="flex flex-row text-textLight px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                    <Copy />
+                    <h1 className="ml-2 text-left text-base font-medium">Copy address</h1>
+                  </div>
 
-                <div
-                  onClick={disconnect}
-                  className="flex flex-row text-textLight px-4 py-2 hover:bg-boxesLight-200 cursor-pointer rounded-lg">
-                  <LogOut color="#fd4a4a" />
-                  <h1 className="ml-2 text-left text-base text-ourRed font-medium">Disconnect</h1>
+                  <div
+                    onClick={disconnect}
+                    className="flex flex-row text-textLight px-4 py-2 hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                    <LogOut color="#fd4a4a" />
+                    <h1 className="ml-2 text-left text-base text-ourRed font-medium">Disconnect</h1>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            <button
+              onClick={async () => {
+                setIsDropdownOpen(false);
+                setTransactionModalOpen(true);
+                console.log("Attempting to open transaction modal");
+                const pk = new PublicKey(connectedSessionDetails.visible_wallet.pk);
+                let transaction = new Transaction().add(
+                  SystemProgram.transfer({
+                    fromPubkey: pk,
+                    toPubkey: pk,
+                    lamports: 100,
+                  })
+                );
+                transaction.feePayer = pk;
+                console.log("Getting recent blockhash");
+                const anyTransaction: any = transaction;
+                anyTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                const serializedTransaction = transaction.serialize({
+                  requireAllSignatures: false,
+                });
+                const encodedTransaction = Buffer.from(serializedTransaction).toString("base64");
+                console.log("Tx:", encodedTransaction);
+                await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
+              }}
+              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
+              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Send transaction</h1>
+            </button>
           </div>
         ) : (
           // <div>
@@ -276,6 +341,49 @@ const HomePage = () => {
                 value={`exp://10.0.0.58:8081?action=connect&session=${sessionId}`}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {isTransactionModalOpen && (
+        <div
+          onClick={async () => {
+            setTransactionModalOpen(false);
+            setSignature("");
+            await clearUserTransaction(connectedSessionDetails?.ConnectedUserId || "");
+          }}
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center"
+          style={{
+            animation: `${isTransactionModalOpen ? "fadeIn" : "fadeOut"} 0.5s ease-out forwards`,
+          }}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-backgroundLight rounded-2xl p-4">
+            <div className="flex flex-row justify-between mb-4">
+              <img src={peerLinkFull} className="h-6" />
+              <XCircle
+                className="h-6 text-textLight cursor-pointer"
+                onClick={async () => {
+                  setTransactionModalOpen(false);
+                  setSignature("");
+                  await clearUserTransaction(connectedSessionDetails?.ConnectedUserId || "");
+                }}
+              />
+            </div>
+            <div className="bg-boxesLight py-16 px-20 rounded-xl mb-2 flex flex-col items-center justify-center">
+              {signature != "" ? <Check size={75} color={"#217EFD"} /> : <div className="loader"></div>}
+              <h1 className="text-base font-semibold text-center">
+                {signature != "" ? "Transaction completed" : "waiting for confirmation..."}
+              </h1>
+              {signature != "" && (
+                <h1
+                  onClick={() => window.open(`https://solscan.io/tx/${signature}`, "_blank", "noopener,noreferrer")}
+                  className="text-primary text-sm font-medium text-center cursor-pointer mt-0">
+                  View transaction
+                </h1>
+              )}
+            </div>
+            {signature === "" && (
+              <h1 className="text-xs font-semibold text-center mt-4">Proceed in the peerlink app</h1>
+            )}
           </div>
         </div>
       )}
