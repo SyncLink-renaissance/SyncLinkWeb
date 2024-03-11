@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import peerLinkSymbol from "../assets/onlyIcon.svg";
 import peerLinkFull from "../assets/images/fullLogo.svg";
 import peerLinkLogoRounded from "../assets/logoRounded.png";
