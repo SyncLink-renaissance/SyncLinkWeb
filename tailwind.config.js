@@ -80,8 +80,19 @@ export default {
         textLight: {
           DEFAULT: "#1E1E1E",
         },
-        fire: {
-          DEFAULT: "#ff9a00",
+        ourRed: {
+          DEFAULT: "#fd4a4a",
+          50: "#fff1f1",
+          100: "#ffe0e0",
+          200: "#ffc6c6",
+          300: "#ff9e9e",
+          400: "#ff6666",
+          500: "#fd4a4a",
+          600: "#eb1717",
+          700: "#c60f0f",
+          800: "#a31111",
+          900: "#871515",
+          950: "#4a0505",
         },
       },
     },

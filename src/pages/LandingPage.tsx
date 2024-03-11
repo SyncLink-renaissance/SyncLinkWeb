@@ -1,25 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import peerLinkSymbol from "../assets/onlyIcon.svg";
 import peerLinkFull from "../assets/images/fullLogo.svg";
 import peerLinkLogoRounded from "../assets/logoRounded.png";
 import appstoreIcon from "../assets/images/appstoreIcon.svg";
 import googleplayIcon from "../assets/images/googleplayIcon.svg";
-import { XCircle } from "lucide-react";
+import solflareIcon from "../assets/images/solflareIcon.svg";
+import phantomIcon from "../assets/images/phantomIcon.svg";
+import { ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
-import { createSession, deleteSessionById } from "../hooks/firebase";
+import { createSession, deleteSessionById, deleteSessionToUser } from "../hooks/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
+import { Toast } from "../components/toast";
 
 const HomePage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(isModalOpen);
   const [sessionId, setSessionId] = useState("");
   const [genratingSession, setGenratingSession] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const [connectedSessionDetails, setConnectedSessionDetails] = useState<{
-    visible_pk: string;
+    visible_wallet: { pk: string; walletApp: string };
     pk: string;
     session: string;
+    ConnectedUserId: string;
   }>();
   const generateSessionId = () => {
     // Generate a new UUID
@@ -28,7 +36,14 @@ const HomePage = () => {
     // Here, you would also handle storing the new session ID in your database
     // and any other logic needed to create a new session
   };
+
   const toggleModal = () => setModalOpen(!isModalOpen);
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 1250); // Automatically hide the toast after 3 seconds
+  };
 
   const onClickButton = async () => {
     setGenratingSession(true);
@@ -64,6 +79,26 @@ const HomePage = () => {
   const handleModalContentClick = (e: any) => {
     e.stopPropagation();
   };
+  const disconnect = async () => {
+    const statusA = await deleteSessionById(sessionId);
+    const statusB = await deleteSessionToUser(sessionId, connectedSessionDetails?.ConnectedUserId || "");
+    if (!statusA || !statusB) {
+      alert("Error disconnecting");
+      return;
+    }
+  };
+  useEffect(() => {
+    const loadStorage = () => {
+      const savedSessionJSON = localStorage.getItem("connectedSession");
+
+      const savedSession = savedSessionJSON ? JSON.parse(savedSessionJSON) : null;
+      if (savedSession) {
+        setConnectedSessionDetails(savedSession);
+        setSessionId(savedSession?.session);
+      }
+    };
+    loadStorage();
+  }, []);
   useEffect(() => {
     if (!sessionId) {
       console.log("Session id empty");
@@ -82,17 +117,26 @@ const HomePage = () => {
           console.log("doc det:", sessionDetails);
           const pk = sessionDetails.connectedWallet?.pk;
           if (pk) {
-            setConnectedSessionDetails({
-              visible_pk: sessionDetails.connectedWallet?.pk,
+            const sessionD = {
+              visible_wallet: {
+                pk: sessionDetails.connectedWallet?.pk,
+                walletApp: sessionDetails.connectedWallet?.walletApp,
+              },
               pk: sessionDetails.proxyWallet?.pk,
               session: sessionId,
-            });
+              ConnectedUserId: sessionDetails?.ConnectedUserId,
+            };
+            setConnectedSessionDetails(sessionD);
+            localStorage.setItem("connectedSession", JSON.stringify(sessionD));
             setShouldRender(false);
             setModalOpen(false);
           }
           console.log("Connected wallet: ", sessionDetails.connectedWallet?.pk);
         } else {
-          console.log("No such document!");
+          console.log("No such document/disconnected!");
+          setConnectedSessionDetails(undefined);
+          localStorage.removeItem("connectedSession");
+          showToast("User disconnected");
         }
       },
       (error) => {
@@ -105,19 +149,65 @@ const HomePage = () => {
       unsubscribe();
     };
   }, [sessionId]);
+
+  const walletsIcons: { [key: string]: any } = {
+    solflare: solflareIcon,
+    phantom: phantomIcon,
+  };
+  function shortenSolanaAddress(address: string): string {
+    // Check if the address length is more than 8 characters to require shortening
+    if (address) {
+      return `${address.slice(0, 4)}...${address.slice(-4)}`;
+    } else {
+      // If the address is already short, return it as is
+      return "Undifined";
+    }
+  }
   return (
     <>
+      <Toast message={toastMessage} isVisible={toastVisible} onClose={() => setToastVisible(false)} />
       <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
         {connectedSessionDetails ? (
-          <div>
-            <h1 className="mb-1 text-primary text-xl font-semibold">Visible wallet pk:</h1>
-            <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.visible_pk}</h1>
-            <h1 className="mb-1 text-primary text-xl font-semibold">Wallet pk:</h1>
-            <h1 className="mb-4 text-textLight text-lg ">{connectedSessionDetails.pk}</h1>
-            <h1 className="mb-1 text-primary text-xl font-semibold">Session id:</h1>
-            <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.session}</h1>
+          <div className="relative">
+            <button
+              onClick={toggleDropdown}
+              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+              <img src={walletsIcons[connectedSessionDetails.visible_wallet.walletApp]} className="w-6 h-6" />
+              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">
+                {shortenSolanaAddress(connectedSessionDetails.visible_wallet.pk)}
+              </h1>
+              <ChevronDown color="white" />
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2">
+                <div
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(connectedSessionDetails.visible_wallet.pk);
+                    showToast("Copied!");
+                  }}
+                  className="flex flex-row text-textLight px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                  <Copy />
+                  <h1 className="ml-2 text-left text-base font-medium">Copy address</h1>
+                </div>
+
+                <div
+                  onClick={disconnect}
+                  className="flex flex-row text-textLight px-4 py-2 hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                  <LogOut color="#fd4a4a" />
+                  <h1 className="ml-2 text-left text-base text-ourRed font-medium">Disconnect</h1>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
+          // <div>
+          //   <h1 className="mb-1 text-primary text-xl font-semibold">Visible wallet pk:</h1>
+          //   <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.visible_wallet.pk}</h1>
+          //   <h1 className="mb-1 text-primary text-xl font-semibold">Wallet pk:</h1>
+          //   <h1 className="mb-4 text-textLight text-lg ">{connectedSessionDetails.pk}</h1>
+          //   <h1 className="mb-1 text-primary text-xl font-semibold">Session id:</h1>
+          //   <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.session}</h1>
+          // </div>
           <button
             onClick={onClickButton}
             className="flex flex-row px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
