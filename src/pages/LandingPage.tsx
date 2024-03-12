@@ -70,7 +70,12 @@ const HomePage = () => {
     const status = await createSession(newSessionId, window.location.hostname, icon, document.title);
     console.log("status:", status);
     setGenratingSession(false);
-    toggleModal();
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      window.open(`exp://10.0.0.58:8081?action=connect&session=${sessionId}`);
+    } else {
+      toggleModal();
+    }
   };
 
   const closeModalAndResetSession = async () => {
@@ -259,6 +264,10 @@ const HomePage = () => {
                 const encodedTransaction = Buffer.from(serializedTransaction).toString("base64");
                 console.log("Tx:", encodedTransaction);
                 await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
+
+                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                  window.open(`exp://10.0.0.58:8081`);
+                }
               }}
               className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
               <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Send transaction</h1>
