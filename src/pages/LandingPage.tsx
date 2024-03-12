@@ -72,7 +72,7 @@ const HomePage = () => {
     setGenratingSession(false);
 
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      window.open(`exp://10.0.0.58:8081?action=connect&session=${sessionId}`);
+      window.location.href = `exp://10.0.0.58:8081?action=connect&session=${sessionId}`;
     } else {
       toggleModal();
     }
