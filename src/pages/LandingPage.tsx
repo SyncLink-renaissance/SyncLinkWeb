@@ -10,10 +10,12 @@ import { Check, ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
 import {
+  clearUserSignMsg,
   clearUserTransaction,
   createSession,
   deleteSessionById,
   deleteSessionToUser,
+  setUserSignMsg,
   setUserTransaction,
 } from "../hooks/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -27,8 +29,10 @@ const HomePage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(isModalOpen);
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [signMsgModal, setSignMsgModal] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [genratingSession, setGenratingSession] = useState(false);
+  const [openingTransactionModal, setOpeningTransactionModal] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -178,6 +182,11 @@ const HomePage = () => {
       if (doc.exists()) {
         const userData = doc.data();
         console.log("Listening to user data changes", userData);
+
+        if (!isTransactionModalOpen) return;
+        if (userData.tx.tx === "") {
+          setTransactionModalOpen(false);
+        }
         const txSignature = userData?.tx?.signature;
         if (txSignature) {
           console.log("Signature updated:", txSignature);
@@ -191,6 +200,37 @@ const HomePage = () => {
 
     return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
   }, [connectedSessionDetails?.ConnectedUserId, isTransactionModalOpen]);
+
+  useEffect(() => {
+    if (!connectedSessionDetails?.ConnectedUserId || !signMsgModal) {
+      console.log("Required conditions not met for setting up the signature listener");
+      return;
+    }
+
+    const UserRef = doc(db, "users", connectedSessionDetails.ConnectedUserId);
+
+    const unsubscribe = onSnapshot(UserRef, (doc) => {
+      if (doc.exists()) {
+        const userData = doc.data();
+        console.log("Listening to user data changes", userData);
+
+        if (!signMsgModal) return;
+        if (userData.signMsg.msg === "") {
+          setSignMsgModal(false);
+        }
+        const tSignature = userData?.signMsg?.signature;
+        if (tSignature) {
+          console.log("Signature updated:", tSignature);
+          setSignature(tSignature);
+          // Trigger any additional actions needed after signature update
+        }
+      } else {
+        console.log("User document not found");
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
+  }, [connectedSessionDetails?.ConnectedUserId, signMsgModal]);
   const walletsIcons: { [key: string]: any } = {
     solflare: solflareIcon,
     phantom: phantomIcon,
@@ -244,7 +284,7 @@ const HomePage = () => {
             <button
               onClick={async () => {
                 setIsDropdownOpen(false);
-                setTransactionModalOpen(true);
+                setOpeningTransactionModal(true);
                 console.log("Attempting to open transaction modal");
                 const pk = new PublicKey(connectedSessionDetails.visible_wallet.pk);
                 let transaction = new Transaction().add(
@@ -264,13 +304,45 @@ const HomePage = () => {
                 const encodedTransaction = Buffer.from(serializedTransaction).toString("base64");
                 console.log("Tx:", encodedTransaction);
                 await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
+                setOpeningTransactionModal(false);
+                setTransactionModalOpen(true);
+                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                  window.open(`exp://10.0.0.58:8081`);
+                }
+              }}
+              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl mr-5">
+              {openingTransactionModal && (
+                <div
+                  className="spinner-border animate-spin inline-block w-5 h-5 border-4 rounded-full mr-1"
+                  role="status"
+                />
+              )}
+              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">
+                {openingTransactionModal ? "Loading..." : "Send transaction"}
+              </h1>
+            </button>
 
+            <button
+              onClick={async () => {
+                setSignMsgModal(true);
+                const msg = `Welcome to ${document.title}!
+Click to sign in and accept the ${document.title} Terms of Service (https://example.com/tos) and Privacy Policy (https://example.com/privacy).
+
+This request will not trigger a blockchain transaction or cost any network fees.
+
+Wallet address:
+${connectedSessionDetails.pk}
+
+On behalf of : 
+${connectedSessionDetails.visible_wallet.pk}
+`;
+                await setUserSignMsg(msg, connectedSessionDetails?.ConnectedUserId || "", sessionId);
                 if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                   window.open(`exp://10.0.0.58:8081`);
                 }
               }}
               className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
-              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Send transaction</h1>
+              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Sign Message</h1>
             </button>
           </div>
         ) : (
@@ -389,6 +461,40 @@ const HomePage = () => {
                   View transaction
                 </h1>
               )}
+            </div>
+            {signature === "" && (
+              <h1 className="text-xs font-semibold text-center mt-4">Proceed in the peerlink app</h1>
+            )}
+          </div>
+        </div>
+      )}
+
+      {signMsgModal && (
+        <div
+          onClick={async () => {
+            setSignMsgModal(false);
+            setSignature("");
+            await clearUserSignMsg(connectedSessionDetails?.ConnectedUserId || "");
+          }}
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center"
+          style={{
+            animation: `${signMsgModal ? "fadeIn" : "fadeOut"} 0.5s ease-out forwards`,
+          }}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-backgroundLight rounded-2xl p-4">
+            <div className="flex flex-row justify-between mb-4">
+              <img src={peerLinkFull} className="h-6" />
+              <XCircle
+                className="h-6 text-textLight cursor-pointer"
+                onClick={async () => {
+                  setSignMsgModal(false);
+                  setSignature("");
+                  await clearUserSignMsg(connectedSessionDetails?.ConnectedUserId || "");
+                }}
+              />
+            </div>
+            <div className="bg-boxesLight py-16 px-36 rounded-xl mb-2 flex flex-col items-center justify-center">
+              {signature != "" ? <Check size={75} color={"#217EFD"} /> : <div className="loader"></div>}
+              <h1 className="text-base font-semibold text-center">{signature != "" ? "Signed!" : "Signing..."}</h1>
             </div>
             {signature === "" && (
               <h1 className="text-xs font-semibold text-center mt-4">Proceed in the peerlink app</h1>

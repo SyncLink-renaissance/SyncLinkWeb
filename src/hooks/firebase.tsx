@@ -77,6 +77,27 @@ export const setUserTransaction = async (transaction: string, userId: string, se
   }
 };
 
+export const setUserSignMsg = async (msg: string, userId: string, sessionId: string) => {
+  if (!userId || !sessionId || userId === "") return false;
+  const UserRef = doc(db, "users", userId);
+
+  const signMsg = {
+    session: sessionId,
+    msg: msg,
+    signature: "",
+  };
+  try {
+    await updateDoc(UserRef, {
+      signMsg,
+    });
+    console.log("signMsg updated successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error updating signMsg to user:", error);
+    return false;
+  }
+};
+
 export const clearUserTransaction = async (userId: string) => {
   if (!userId) return false;
   const UserRef = doc(db, "users", userId);
@@ -96,6 +117,29 @@ export const clearUserTransaction = async (userId: string) => {
     return true;
   } catch (error) {
     console.error("Error clearing transaction for user:", error);
+    return false;
+  }
+};
+
+export const clearUserSignMsg = async (userId: string) => {
+  if (!userId) return false;
+  const UserRef = doc(db, "users", userId);
+
+  // Prepare the update to reset or clear the transaction information
+  const signMsgReset = {
+    session: "",
+    msg: "",
+    signature: "",
+  };
+
+  try {
+    await updateDoc(UserRef, {
+      signMsg: signMsgReset, // Update the document to reset the transaction information
+    });
+    console.log("signMsg cleared successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error clearing signMsg for user:", error);
     return false;
   }
 };
