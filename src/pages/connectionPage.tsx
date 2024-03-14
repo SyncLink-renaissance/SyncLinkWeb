@@ -6,6 +6,7 @@ import appstoreIcon from "../assets/images/appstoreIcon.svg";
 import googleplayIcon from "../assets/images/googleplayIcon.svg";
 import solflareIcon from "../assets/images/solflareIcon.svg";
 import phantomIcon from "../assets/images/phantomIcon.svg";
+
 import { Check, ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
@@ -23,7 +24,7 @@ import { db } from "../config/firebaseConfig";
 import { Toast } from "../components/toast";
 import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 
-const HomePage = () => {
+const ConnectionPage = () => {
   const connection = new Connection("https://mainnet.helius-rpc.com/?api-key=aa904a60-705f-4811-beab-cb00d288cc65");
 
   const [isModalOpen, setModalOpen] = useState(false);
@@ -31,7 +32,9 @@ const HomePage = () => {
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
   const [signMsgModal, setSignMsgModal] = useState(false);
   const [sessionId, setSessionId] = useState("");
+
   const [genratingSession, setGenratingSession] = useState(false);
+
   const [openingTransactionModal, setOpeningTransactionModal] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -59,7 +62,7 @@ const HomePage = () => {
     setTimeout(() => setToastVisible(false), 1500); // Automatically hide the toast after 3 seconds
   };
 
-  const onClickButton = async () => {
+  const connectSession = async () => {
     setGenratingSession(true);
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
@@ -75,11 +78,7 @@ const HomePage = () => {
     console.log("status:", status);
     setGenratingSession(false);
 
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      window.location.href = `exp://10.0.0.58:8081?action=connect&session=${sessionId}`;
-    } else {
-      toggleModal();
-    }
+    toggleModal();
   };
 
   const closeModalAndResetSession = async () => {
@@ -88,6 +87,7 @@ const HomePage = () => {
     setSessionId("");
     setModalOpen(false);
   };
+
   useEffect(() => {
     if (isModalOpen) setShouldRender(true);
   }, [isModalOpen]);
@@ -244,6 +244,13 @@ const HomePage = () => {
       return "Undifined";
     }
   }
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    return (
+      <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
+        <h1>Sorry,we are not supporting mobile yet...</h1>
+      </div>
+    );
+  }
   return (
     <>
       <Toast message={toastMessage} isVisible={toastVisible} onClose={() => setToastVisible(false)} />
@@ -255,7 +262,7 @@ const HomePage = () => {
                 onClick={toggleDropdown}
                 className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl  ">
                 <img src={walletsIcons[connectedSessionDetails.visible_wallet.walletApp]} className="w-6 h-6" />
-                <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">
+                <h1 className="ml-2 text-left text-base text-backgroundLight font-medium">
                   {shortenSolanaAddress(connectedSessionDetails.visible_wallet.pk)}
                 </h1>
                 <ChevronDown color="white" />
@@ -290,7 +297,7 @@ const HomePage = () => {
                 let transaction = new Transaction().add(
                   SystemProgram.transfer({
                     fromPubkey: pk,
-                    toPubkey: pk,
+                    toPubkey: new PublicKey("Gsvfc45PCxYnByjNfoujWjLc6a9wh8vxdTaujx2MQoJm"),
                     lamports: 100,
                   })
                 );
@@ -306,9 +313,6 @@ const HomePage = () => {
                 await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
                 setOpeningTransactionModal(false);
                 setTransactionModalOpen(true);
-                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                  window.open(`exp://10.0.0.58:8081`);
-                }
               }}
               className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl mr-5">
               {openingTransactionModal && (
@@ -337,26 +341,15 @@ On behalf of :
 ${connectedSessionDetails.visible_wallet.pk}
 `;
                 await setUserSignMsg(msg, connectedSessionDetails?.ConnectedUserId || "", sessionId);
-                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                  window.open(`exp://10.0.0.58:8081`);
-                }
               }}
               className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
               <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Sign Message</h1>
             </button>
           </div>
         ) : (
-          // <div>
-          //   <h1 className="mb-1 text-primary text-xl font-semibold">Visible wallet pk:</h1>
-          //   <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.visible_wallet.pk}</h1>
-          //   <h1 className="mb-1 text-primary text-xl font-semibold">Wallet pk:</h1>
-          //   <h1 className="mb-4 text-textLight text-lg ">{connectedSessionDetails.pk}</h1>
-          //   <h1 className="mb-1 text-primary text-xl font-semibold">Session id:</h1>
-          //   <h1 className="mb-4 text-textLight text-lg">{connectedSessionDetails.session}</h1>
-          // </div>
           <button
-            onClick={onClickButton}
-            className="flex flex-row px-4 py-4 bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+            onClick={connectSession}
+            className="flex flex-row px-4 py-4  bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
             {genratingSession ? (
               <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status" />
             ) : (
@@ -506,7 +499,7 @@ ${connectedSessionDetails.visible_wallet.pk}
   );
 };
 
-export default HomePage;
+export default ConnectionPage;
 
 // Add these keyframes to your global styles or CSS file
 // fadeIn and fadeOut animations for the backdrop

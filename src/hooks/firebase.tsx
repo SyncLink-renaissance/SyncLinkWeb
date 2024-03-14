@@ -2,6 +2,8 @@ import { arrayRemove, collection, deleteDoc, doc, setDoc, updateDoc } from "fire
 import { db } from "../config/firebaseConfig";
 
 const sessionsRef = collection(db, "sessions");
+
+const proofSessionsRef = collection(db, "proofSessions");
 export const createSession = async (sessionId: string, url: string, icon: string, name: string) => {
   // Reference to the document in the collection with a custom ID
   const sessionDocRef = doc(sessionsRef, sessionId);
@@ -25,10 +27,50 @@ export const createSession = async (sessionId: string, url: string, icon: string
     return false;
   }
 };
+export const createProofSession = async (
+  sessionId: string,
+  tokenToCheck: string,
+  dappName: string,
+  minAmountToCheck?: number
+) => {
+  // Reference to the document in the collection with a custom ID
+  const proofSessionDocRef = doc(proofSessionsRef, sessionId);
 
+  // Set the document with your desired data
+  try {
+    await setDoc(proofSessionDocRef, {
+      // Your session data here
+      createdAt: new Date(),
+      tokenToCheck: tokenToCheck,
+      minAmountToCheck: minAmountToCheck || 0,
+      status: { status: "", description: "" },
+      dappName: dappName,
+      // Include any other session-related data
+    });
+
+    console.log(`proof Session created with ID: ${sessionId}`);
+    return true;
+  } catch (error) {
+    console.error("Error creating proof session document:", error);
+    return false;
+  }
+};
 export const deleteSessionById = async (sessionId: string) => {
   // Reference to the document in the sessions collection
   const sessionDocRef = doc(db, "sessions", sessionId);
+
+  try {
+    await deleteDoc(sessionDocRef);
+    console.log(`Session with ID: ${sessionId} has been deleted.`);
+    return true;
+  } catch (error) {
+    console.error("Error deleting session document:", error);
+    return false;
+  }
+};
+export const deleteProofSessionById = async (sessionId: string) => {
+  // Reference to the document in the sessions collection
+  const sessionDocRef = doc(db, "proofSessions", sessionId);
 
   try {
     await deleteDoc(sessionDocRef);

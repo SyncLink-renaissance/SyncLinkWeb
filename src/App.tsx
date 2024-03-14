@@ -4,7 +4,8 @@ import "./styles/default.css";
 
 // * Import Here Any Page Component
 import LoadingPage from "./pages/LoadingPage";
-const LandingPage = lazy(() => import("./pages/LandingPage"));
+const ConnectionPage = lazy(() => import("./pages/connectionPage"));
+const ProofPage = lazy(() => import("./pages/proofPage"));
 import { Buffer } from "buffer";
 
 const App = () => {
@@ -22,7 +23,8 @@ const App = () => {
   return (
     <Suspense fallback={<LoadingPage />}>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/connection" element={<ConnectionPage />} />
+        <Route path="/proof" element={<ProofPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Suspense>
