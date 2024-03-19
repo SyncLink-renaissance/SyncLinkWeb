@@ -7,7 +7,7 @@ import googleplayIcon from "../assets/images/googleplayIcon.svg";
 import solflareIcon from "../assets/images/solflareIcon.svg";
 import phantomIcon from "../assets/images/phantomIcon.svg";
 
-import { Check, ChevronDown, Copy, LogOut, XCircle } from "lucide-react";
+import { Check, ChevronDown, Copy, LogOut, X, XCircle } from "lucide-react";
 import { QRCode } from "react-qrcode-logo";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -443,11 +443,21 @@ ${connectedSessionDetails.visible_wallet.pk}
               />
             </div>
             <div className="bg-boxesLight py-16 px-20 rounded-xl mb-2 flex flex-col items-center justify-center">
-              {signature != "" ? <Check size={75} color={"#217EFD"} /> : <div className="loader"></div>}
+              {signature != "" && signature != "rejected" ? (
+                <Check size={75} color={"#217EFD"} />
+              ) : signature === "rejected" ? (
+                <X size={75} color={"#fd4a4a"} />
+              ) : (
+                <div className="loader"></div>
+              )}
               <h1 className="text-base font-semibold text-center">
-                {signature != "" ? "Transaction completed" : "waiting for confirmation..."}
+                {signature != "" && signature != "rejected"
+                  ? "Transaction completed"
+                  : signature === "rejected"
+                    ? `User rejected the transaction`
+                    : "waiting for confirmation..."}
               </h1>
-              {signature != "" && (
+              {signature != "" && signature != "rejected" && (
                 <h1
                   onClick={() => window.open(`https://solscan.io/tx/${signature}`, "_blank", "noopener,noreferrer")}
                   className="text-primary text-sm font-medium text-center cursor-pointer mt-0">

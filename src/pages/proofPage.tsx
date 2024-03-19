@@ -17,9 +17,17 @@ const ConnectionPage = () => {
   const [status, setStatus] = useState({ status: "", description: "" });
   const [proofSessionId, setProofSessionId] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+  const [isNftDropdownOpen, setIsNftDropdownOpen] = useState(false);
+  const [proffingType, setProffingType] = useState("");
   const [genratingProofSession, setGenratingProofSession] = useState(false);
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const toggleDropdown = () => {
+    setIsNftDropdownOpen(false);
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+  const toggleNftDropdown = () => {
+    setIsDropdownOpen(false);
+    setIsNftDropdownOpen(!isNftDropdownOpen);
+  };
   const generateSessionId = () => {
     // Generate a new UUID
     const newSessionId = uuidv4();
@@ -28,19 +36,15 @@ const ConnectionPage = () => {
     // and any other logic needed to create a new session
   };
 
-  const proofToken = async (tokenAddress: string, minAmountToCheck?: number) => {
+  const proofToken = async (tokenAddress: string, proffingType: string, minAmountToCheck?: number) => {
+    setProffingType(proffingType);
     setIsDropdownOpen(false);
+    setIsNftDropdownOpen(false);
     setGenratingProofSession(true);
     const newSessionId = generateSessionId();
     setProofSessionId(newSessionId);
 
-    const status = await createProofSession(
-      newSessionId,
-      tokenAddress,
-      document.title,
-
-      minAmountToCheck
-    );
+    const status = await createProofSession(newSessionId, tokenAddress, document.title, proffingType, minAmountToCheck);
     console.log("status:", status);
     setGenratingProofSession(false);
 
@@ -102,7 +106,7 @@ const ConnectionPage = () => {
     e.stopPropagation();
   };
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(0);
-
+  const [selectedNftIndex, setSelectedNftIndex] = useState<number>(0);
   const tokens = [
     {
       name: "Solana",
@@ -154,6 +158,51 @@ const ConnectionPage = () => {
     },
   ];
 
+  const nfts = [
+    {
+      name: "Mad lads",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:128:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/mad_lads_pfp_1682211343777.png",
+      mintAddress: "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w",
+    },
+    {
+      name: "Meggos",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/meegos_pfp_1692443263785.png",
+      mintAddress: "HNv9G2NxgZEWLxmzFqSCWYk4moUYvNrWjbq6AY2AHJKF",
+    },
+
+    {
+      name: "SMB Gen2",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://i.imgur.com/bMH6qNc.png",
+      mintAddress: "SMBtHCCC6RYRutFEPb4gZqeBLUZbMNhRKaMKZZLHi7W",
+    },
+    {
+      name: "Famous Fox Federation",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/famous_fox_federation_pfp_1679672949828.gif",
+      mintAddress: "BUjZjAS2vbbb65g7Z1Ca9ZRVYoJscURG5L3AkVvHP9ac",
+    },
+    {
+      name: "Okay Bears",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://bafkreidgfsdjx4nt4vctch73hcchb3pkiwic2onfw5yr4756adchogk5de.ipfs.nftstorage.link/",
+      mintAddress: "3saAedkM9o5g1u5DCqsuMZuC4GRqPB4TuMkvSsSVvGQ3",
+    },
+    {
+      name: "Claynosaurz",
+      icon: "https://creator-hub-prod.s3.us-east-2.amazonaws.com/claynosaurz_pfp_1679930706147.jpeg",
+      mintAddress: "6mszaj17KSfVqADrQj3o4W3zoLMTykgmV37W4QadCczK",
+    },
+    {
+      name: "y00ts",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://bafkreidc5co72clgqor54gpugde6tr4otrubjfqanj4vx4ivjwxnhqgaai.ipfs.nftstorage.link/",
+      mintAddress: "4mKSoDDqApmF1DqXvVTSL6tu2zixrSSNjqMxUnwvVzy2",
+    },
+
+    {
+      name: "Ovols",
+      icon: "https://img-cdn.magiceden.dev/rs:fill:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/elixir_ovols_pfp_1700592508163.png",
+      mintAddress: "9jnJWH9F9t1xAgw5RGwswVKY4GvY2RXhzLSJgpBAhoaR",
+    },
+  ];
+
   if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
     return (
       <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
@@ -163,45 +212,83 @@ const ConnectionPage = () => {
   }
   return (
     <>
-      <div className="w-screen md:h-full flex items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
-        <div className="relative mr-5">
+      <div className="w-screen md:h-full flex  flex-col items-center justify-center bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
+        <div className="flex flex-row">
+          <div className="relative mr-5">
+            <button
+              onClick={toggleDropdown}
+              className="flex flex-row justify-center items-center px-4 py-4  mt-10  bg-boxesLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+              <img src={tokens[selectedTokenIndex].icon} className="h-7 rounded-full" />
+              <h1 className="ml-2 text-center text-base text-textLight font-medium">
+                {tokens[selectedTokenIndex].name} ({tokens[selectedTokenIndex].symbol})
+              </h1>
+              <ChevronDown color="#1E1E1E" />
+            </button>
+            {isDropdownOpen && (
+              <div
+                className="absolute h-64 left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2 overflow-y-auto"
+                style={{ maxHeight: "20rem" }}>
+                {tokens.map((token, index) => (
+                  <div
+                    key={index} // Make sure to include a unique key for each child in a list.
+                    onClick={() => {
+                      setSelectedTokenIndex(index);
+                      toggleDropdown();
+                    }}
+                    className="flex flex-row text-textLight items-center px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                    <img src={token.icon} className="h-5 rounded-full" alt={token.symbol} />
+                    <h1 className="ml-2 text-left text-base font-medium">
+                      {token.name} ({token.symbol})
+                    </h1>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button
-            onClick={toggleDropdown}
-            className="flex flex-row justify-center items-center px-4 py-4  mt-10  bg-boxesLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
-            <img src={tokens[selectedTokenIndex].icon} className="h-7 rounded-full" />
-            <h1 className="ml-2 text-center text-base text-textLight font-medium">
-              {tokens[selectedTokenIndex].name} ({tokens[selectedTokenIndex].symbol})
+            onClick={() => proofToken(tokens[selectedTokenIndex].mintAddress, "token")}
+            className="flex flex-row justify-center px-4 py-4  mt-10  bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+            <h1 className="ml-1 text-center text-base text-backgroundLight font-medium">
+              {genratingProofSession ? "Loading..." : "Proof token holdings"}
             </h1>
-            <ChevronDown color="#1E1E1E" />
           </button>
-          {isDropdownOpen && (
-            <div
-              className="absolute h-64 left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2 overflow-y-auto"
-              style={{ maxHeight: "20rem" }}>
-              {tokens.map((token, index) => (
-                <div
-                  key={index} // Make sure to include a unique key for each child in a list.
-                  onClick={() => {
-                    setSelectedTokenIndex(index);
-                    toggleDropdown();
-                  }}
-                  className="flex flex-row text-textLight items-center px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
-                  <img src={token.icon} className="h-5 rounded-full" alt={token.symbol} />
-                  <h1 className="ml-2 text-left text-base font-medium">
-                    {token.name} ({token.symbol})
-                  </h1>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-        <button
-          onClick={() => proofToken(tokens[selectedTokenIndex].mintAddress)}
-          className="flex flex-row justify-center px-4 py-4  mt-10  bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
-          <h1 className="ml-1 text-center text-base text-backgroundLight font-medium">
-            {genratingProofSession ? "Loading..." : "Proof token holdings"}
-          </h1>
-        </button>
+        <div className="flex flex-row justify-between">
+          <div className="relative mr-5">
+            <button
+              onClick={toggleNftDropdown}
+              className="flex flex-row justify-center items-center px-4 py-4  mt-10  bg-boxesLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+              <img src={nfts[selectedNftIndex].icon} className="h-7 rounded-full" />
+              <h1 className="ml-2 text-center text-base text-textLight font-medium">{nfts[selectedNftIndex].name}</h1>
+              <ChevronDown color="#1E1E1E" />
+            </button>
+            {isNftDropdownOpen && (
+              <div
+                className="absolute h-64 left-1/2 mt-2 p-3 w-60 bg-boxesLight rounded-xl shadow-xl z-10 transform -translate-x-1/2 overflow-y-auto"
+                style={{ maxHeight: "20rem" }}>
+                {nfts.map((nft, index) => (
+                  <div
+                    key={index} // Make sure to include a unique key for each child in a list.
+                    onClick={() => {
+                      setSelectedNftIndex(index);
+                      toggleNftDropdown();
+                    }}
+                    className="flex flex-row text-textLight items-center px-4 py-2 hover:bg-textDark hover:bg-boxesLight-200 cursor-pointer rounded-lg">
+                    <img src={nft.icon} className="h-5 rounded-full" alt={nft.mintAddress} />
+                    <h1 className="ml-2 text-left text-base font-medium">{nft.name}</h1>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => proofToken(nfts[selectedNftIndex].mintAddress, "nft")}
+            className="flex flex-row justify-center px-4 py-4  mt-10  bg-textLight text-backgroundLight rounded-xl hover:bg-textDark hover:border border-backgroundLight transition duration-150 ease-in-out">
+            <h1 className="ml-1 text-center text-base text-backgroundLight font-medium">
+              {genratingProofSession ? "Loading..." : "Proof NFT holdings"}
+            </h1>
+          </button>
+        </div>
       </div>
 
       {shouldRender && status.status === "" && (
@@ -229,7 +316,9 @@ const ConnectionPage = () => {
                 <div>
                   <h1 className="text-xl font-semibold">Scan QR code</h1>
                   <p className="text-lg mt-1 text-textLight opacity-80 ">
-                    {`To verify your ${tokens[selectedTokenIndex].name} holdings, Open your Peerlink mobile app and scan this QR code.`}
+                    {`To verify your ${
+                      proffingType === "nft" ? nfts[selectedNftIndex].name : tokens[selectedTokenIndex].name
+                    } holdings, Open your Peerlink mobile app and scan this QR code.`}
                   </p>
                 </div>
                 <div>
@@ -250,13 +339,13 @@ const ConnectionPage = () => {
                 size={220}
                 fgColor={"#1E1E1E"}
                 bgColor="#EDEDED"
-                logoImage={tokens[selectedTokenIndex].icon}
+                logoImage={proffingType === "nft" ? nfts[selectedNftIndex].icon : tokens[selectedTokenIndex].icon}
                 logoWidth={50}
                 logoPadding={3}
                 eyeRadius={10}
                 logoPaddingStyle="circle"
                 qrStyle="dots"
-                value={`exp://10.0.0.58:8081?action=proofToken&session=${proofSessionId}`}
+                value={`exp://10.0.0.58:8081?action=proof&session=${proofSessionId}`}
               />
             </div>
           </div>

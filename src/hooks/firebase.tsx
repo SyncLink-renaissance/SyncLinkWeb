@@ -31,6 +31,7 @@ export const createProofSession = async (
   sessionId: string,
   tokenToCheck: string,
   dappName: string,
+  proffingType: string,
   minAmountToCheck?: number
 ) => {
   // Reference to the document in the collection with a custom ID
@@ -44,6 +45,7 @@ export const createProofSession = async (
       tokenToCheck: tokenToCheck,
       minAmountToCheck: minAmountToCheck || 0,
       status: { status: "", description: "" },
+      type: proffingType,
       dappName: dappName,
       // Include any other session-related data
     });
