@@ -56,27 +56,6 @@ svg {
   height: auto;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 7px;
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-  background: #27272c;
-  border-radius: 5px;
-}
-
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: #383842;
-  border-radius: 5px;
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #17171b;
-}
 .loader {
   border: 8px solid lightgray; /* Light blue border for the spinner */
   border-top: 8px solid #217efd; /* Blue color for the spinner */

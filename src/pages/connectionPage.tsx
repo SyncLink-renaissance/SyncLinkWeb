@@ -16,6 +16,7 @@ import {
   createSession,
   deleteSessionById,
   deleteSessionToUser,
+  getUserConnectedWallets,
   setUserSignMsg,
   setUserTransaction,
 } from "../hooks/firebase";
@@ -30,6 +31,7 @@ const ConnectionPage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(isModalOpen);
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [showWalletsModal, setShowWalletsModal] = useState(false);
   const [signMsgModal, setSignMsgModal] = useState(false);
   const [sessionId, setSessionId] = useState("");
 
@@ -40,6 +42,7 @@ const ConnectionPage = () => {
   const [toastMessage, setToastMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [signature, setSignature] = useState("");
+  const [connectedWallets, setConnectedWallets] = useState();
   const [connectedSessionDetails, setConnectedSessionDetails] = useState<{
     visible_wallet: { pk: string; walletApp: string };
     pk: string;
@@ -231,6 +234,18 @@ const ConnectionPage = () => {
 
     return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
   }, [connectedSessionDetails?.ConnectedUserId, signMsgModal]);
+
+  useEffect(() => {
+    const getUserWallets = async () => {
+      if (!showWalletsModal) return;
+      const userId = connectedSessionDetails?.ConnectedUserId;
+      if (!userId) return;
+      const connectedW = await getUserConnectedWallets(userId);
+      setConnectedWallets(JSON.parse(connectedW));
+    };
+    getUserWallets();
+  }, [showWalletsModal]);
+
   const walletsIcons: { [key: string]: any } = {
     solflare: solflareIcon,
     phantom: phantomIcon,
@@ -342,8 +357,16 @@ ${connectedSessionDetails.visible_wallet.pk}
 `;
                 await setUserSignMsg(msg, connectedSessionDetails?.ConnectedUserId || "", sessionId);
               }}
-              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
+              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl mr-5">
               <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">Sign Message</h1>
+            </button>
+
+            <button
+              onClick={async () => {
+                setShowWalletsModal(true);
+              }}
+              className="flex flex-row items-center px-4 py-4 bg-textLight text-backgroundLight rounded-xl ">
+              <h1 className="ml-1 text-left text-base text-backgroundLight font-medium">{"Show user wallets"}</h1>
             </button>
           </div>
         ) : (
@@ -502,6 +525,38 @@ ${connectedSessionDetails.visible_wallet.pk}
             {signature === "" && (
               <h1 className="text-xs font-semibold text-center mt-4">Proceed in the peerlink app</h1>
             )}
+          </div>
+        </div>
+      )}
+
+      {showWalletsModal && (
+        <div
+          onClick={async () => {
+            setShowWalletsModal(false);
+          }}
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center"
+          style={{
+            animation: `${showWalletsModal ? "fadeIn" : "fadeOut"} 0.5s ease-out forwards`,
+          }}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-backgroundLight rounded-2xl p-4">
+            <div className="flex flex-row justify-between mb-4">
+              <img src={peerLinkFull} className="h-6" />
+              <XCircle
+                className="h-6 text-textLight cursor-pointer"
+                onClick={async () => {
+                  setShowWalletsModal(false);
+                }}
+              />
+            </div>
+            <div
+              className="bg-boxesLight  py-16 px-4 rounded-xl mb-2 flex flex-col items-center justify-center overflow-scroll"
+              style={{ maxHeight: "80vh", maxWidth: "80vh" }}>
+              {!connectedWallets ? (
+                <div className="loader"></div>
+              ) : (
+                <div className="text-left w-full whitespace-pre-wrap">{JSON.stringify(connectedWallets, null, 2)}</div>
+              )}
+            </div>
           </div>
         </div>
       )}

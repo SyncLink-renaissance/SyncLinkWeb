@@ -1,4 +1,4 @@
-import { arrayRemove, collection, deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
+import { arrayRemove, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 
 const sessionsRef = collection(db, "sessions");
@@ -185,5 +185,21 @@ export const clearUserSignMsg = async (userId: string) => {
   } catch (error) {
     console.error("Error clearing signMsg for user:", error);
     return false;
+  }
+};
+
+export const getUserConnectedWallets = async (userId: string) => {
+  const UserRef = doc(db, "users", userId);
+  try {
+    const docSnap = await getDoc(UserRef);
+    if (docSnap.exists()) {
+      return docSnap.data()?.connectedWallets; // Returns the session data
+    } else {
+      console.log("No such User!");
+      return null; // Handle case where session does not exist
+    }
+  } catch (error) {
+    console.error("Error fetching User info:", error);
+    return null; // Handle error
   }
 };
