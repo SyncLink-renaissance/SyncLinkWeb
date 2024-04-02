@@ -4,6 +4,7 @@ import "./styles/default.css";
 
 // * Import Here Any Page Component
 import LoadingPage from "./pages/LoadingPage";
+const NewPage = lazy(() => import("./pages/new"));
 const ConnectionPage = lazy(() => import("./pages/connectionPage"));
 const ProofPage = lazy(() => import("./pages/proofPage"));
 import { Buffer } from "buffer";
@@ -23,7 +24,8 @@ const App = () => {
   return (
     <Suspense fallback={<LoadingPage />}>
       <Routes>
-        <Route path="/connection" element={<ConnectionPage />} />
+        <Route path="/new" element={<NewPage />} />
+        <Route path="/connection" element={<ConnectionPage />} /> {/* No need to wrap in ConnectProvider */}
         <Route path="/proof" element={<ProofPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

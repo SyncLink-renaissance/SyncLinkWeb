@@ -1,6 +1,13 @@
 import { arrayRemove, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 
+export interface sessionDetails {
+  selected_wallet: { pk: string; walletApp: string };
+  connectedCategory: string;
+  session: string;
+  ConnectedUserId: string;
+}
+
 const sessionsRef = collection(db, "sessions");
 
 const proofSessionsRef = collection(db, "proofSessions");
@@ -16,7 +23,6 @@ export const createSession = async (sessionId: string, url: string, icon: string
       dappMetadata: { name: name, url: url, icon: icon },
       connectedWallet: { pk: "", walletApp: "" },
       connectedCategories: [],
-      proxyWallet: { pk: "" },
       ConnectedUserId: "",
       // Include any other session-related data
     });
@@ -101,6 +107,21 @@ export const deleteSessionToUser = async (sessionId: string, userId: string) => 
   }
 };
 
+export const setconnectedWallet = async (connectedWallet: { pk: string; walletApp: string }, sessionId: string) => {
+  if (!connectedWallet || !sessionId) return false;
+  const SessionRef = doc(db, "sessions", sessionId);
+
+  try {
+    await updateDoc(SessionRef, {
+      connectedWallet,
+    });
+    console.log("connectedWallet updated successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error updating connectedWallet to user:", error);
+    return false;
+  }
+};
 export const setUserTransaction = async (transaction: string, userId: string, sessionId: string) => {
   if (!userId || !sessionId || userId === "") return false;
   const UserRef = doc(db, "users", userId);
@@ -204,3 +225,20 @@ export const getUserConnectedWallets = async (userId: string) => {
     return null; // Handle error
   }
 };
+
+export async function getCategoryDetails(userId: string, categoryName: string) {
+  const UserRef = doc(db, "users", userId);
+  try {
+    const docSnap = await getDoc(UserRef);
+    if (docSnap.exists()) {
+      const category = docSnap.data().walletCategories.find((cat: any) => cat.category === categoryName);
+      return category; // Returns the session data
+    } else {
+      console.log("No such User!");
+      return null; // Handle case where session does not exist
+    }
+  } catch (error) {
+    console.error("Error fetching User info:", error);
+    return null; // Handle error
+  }
+}
