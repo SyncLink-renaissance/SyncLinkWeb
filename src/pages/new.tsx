@@ -86,7 +86,7 @@ const NewPage = () => {
       <h1 className="text-xl text-textLight font-semibold text-left mb-2  ">1. Connect</h1>
       <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4  ">
         Connecting with SyncLink is super easy , this paragraph explain this and also explain evrything about it and
-        trying to sell the product
+        trying to sell the prosdsuct
       </h1>
       <div className="w-full flex justify-start">
         <button
