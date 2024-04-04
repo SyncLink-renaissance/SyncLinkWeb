@@ -242,3 +242,22 @@ export async function getCategoryDetails(userId: string, categoryName: string) {
     return null; // Handle error
   }
 }
+
+export const registerMailToUpdates = async (mail: string) => {
+  try {
+    const ref = collection(db, "comingSoonMails");
+    const docRef = doc(ref);
+
+    // Set the document with your desired data
+    await setDoc(docRef, {
+      RegisterTime: new Date(),
+      mail: mail,
+    });
+
+    console.log("Document created successfully");
+    return true;
+  } catch (error) {
+    console.error("Error creating document:", error);
+    return false;
+  }
+};
