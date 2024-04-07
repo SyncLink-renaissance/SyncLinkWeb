@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-// import { Expo } from "expo-server-sdk";
+// import { Expo } from 'expo-server-sdk';
 
 import NavBar from "../components/navBar";
-import { clearUserTransaction, getUserNotificationToken, sessionDetails } from "../hooks/firebase";
+import { clearUserTransaction, getUserNotificationToken, sessionDetails, setUserTransaction } from "../hooks/firebase";
 import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { Check, X, XCircle } from "lucide-react";
 import fullLogo from "../assets/images/fullLogo.png";
+import axios from "axios";
 
 export function shortenSolanaAddress(address: string): string {
   // Check if the address length is more than 8 characters to require shortening
@@ -77,32 +78,6 @@ const NewPage = () => {
 
     return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
   }, [connectedSessionDetails?.ConnectedUserId, isTransactionModalOpen]);
-
-  async function sendPushNotification(expoPushToken: string, title: string, body: string, data: any) {
-    const message = {
-      to: expoPushToken,
-      title,
-      body,
-      data,
-    };
-
-    try {
-      // Send the push notification
-      await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "Accept-Encoding": "gzip, deflate",
-        },
-        body: JSON.stringify(message),
-      });
-      console.log("Push notification sent successfully");
-    } catch (error) {
-      console.error("Error sending push notification:", error);
-    }
-  }
-
   return (
     <div className="flex flex-col w-screen md:h-full px-32 bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
       <NavBar
@@ -173,24 +148,41 @@ const NewPage = () => {
             });
             const encodedTransaction = Buffer.from(serializedTransaction).toString("base64");
             console.log("Tx:", encodedTransaction);
-            // await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
-
-            // send notification
+            await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
             const expoPushToken = await getUserNotificationToken(connectedSessionDetails.ConnectedUserId);
-            alert(expoPushToken);
-            if (expoPushToken)
-              await sendPushNotification(
-                expoPushToken,
-                `${document.title} - transaction`,
-                `Click to confirm the transaction from ${document.title} with ${shortenSolanaAddress(pk.toBase58())}`,
-                {
-                  action:
-                    connectedSessionDetails?.selected_wallet.walletApp.toLowerCase() === "phantom"
-                      ? "signAndSendTransactionPhantom"
-                      : "signAndSendTransactionSolflare",
-                  data: { serializedTx: serializedTransaction, wallet: connectedSessionDetails?.selected_wallet.pk },
-                }
-              );
+            // alert(expoPushToken);
+            if (expoPushToken) {
+              try {
+                const response = await axios.get("http://localhost:3000/notification/pushTx", {
+                  params: {
+                    expoPushToken: expoPushToken,
+                    dappName: "peerlink",
+                    wallet: connectedSessionDetails?.selected_wallet.pk,
+                    action:
+                      connectedSessionDetails?.selected_wallet.walletApp.toLowerCase() === "phantom"
+                        ? "signAndSendTransactionPhantom"
+                        : "signAndSendTransactionSolflare",
+                    serializedTx: encodedTransaction,
+                  },
+                });
+                console.log("Response:", response.data);
+              } catch (error) {
+                alert(`Error: ${error}`);
+              }
+
+              // await sendPushNotification(
+              //   expoPushToken,
+              //   `${document.title} - transaction`,
+              //   `Click to confirm the transaction from ${document.title} with ${shortenSolanaAddress(pk.toBase58())}`,
+              //   {
+              //     action:
+              //       connectedSessionDetails?.selected_wallet.walletApp.toLowerCase() === "phantom"
+              //         ? "signAndSendTransactionPhantom"
+              //         : "signAndSendTransactionSolflare",
+              //     data: { serializedTx: serializedTransaction, wallet: connectedSessionDetails?.selected_wallet.pk },
+              //   }
+              // );
+            }
             setOpeningTransactionModal(false);
             setTransactionModalOpen(true);
           }}
