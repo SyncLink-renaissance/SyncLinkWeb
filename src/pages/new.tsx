@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Expo, ExpoPushMessage } from "expo-server-sdk";
+// import { Expo } from "expo-server-sdk";
 
 import NavBar from "../components/navBar";
 import { clearUserTransaction, getUserNotificationToken, sessionDetails } from "../hooks/firebase";
@@ -19,7 +19,7 @@ export function shortenSolanaAddress(address: string): string {
   }
 }
 const NewPage = () => {
-  const expo = new Expo();
+  // const expo = new Expo();
   const connection = new Connection("https://mainnet.helius-rpc.com/?api-key=aa904a60-705f-4811-beab-cb00d288cc65");
 
   const [startConnection, setStartConnection] = useState(false);
