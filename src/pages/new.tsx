@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Expo, ExpoPushMessage } from "expo-server-sdk";
 
 import NavBar from "../components/navBar";
 import { clearUserTransaction, getUserNotificationToken, sessionDetails } from "../hooks/firebase";
@@ -7,26 +8,6 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { Check, X, XCircle } from "lucide-react";
 import fullLogo from "../assets/images/fullLogo.png";
-
-export async function sendPushNotification(expoPushToken: string, title: string, body: string, data: any) {
-  const message = {
-    to: expoPushToken,
-    sound: "default",
-    title,
-    body,
-    data,
-  };
-
-  await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Accept-encoding": "gzip, deflate",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(message),
-  });
-}
 
 export function shortenSolanaAddress(address: string): string {
   // Check if the address length is more than 8 characters to require shortening
@@ -38,6 +19,7 @@ export function shortenSolanaAddress(address: string): string {
   }
 }
 const NewPage = () => {
+  const expo = new Expo();
   const connection = new Connection("https://mainnet.helius-rpc.com/?api-key=aa904a60-705f-4811-beab-cb00d288cc65");
 
   const [startConnection, setStartConnection] = useState(false);
@@ -95,6 +77,32 @@ const NewPage = () => {
 
     return () => unsubscribe(); // Cleanup listener when component unmounts or dependencies change
   }, [connectedSessionDetails?.ConnectedUserId, isTransactionModalOpen]);
+
+  async function sendPushNotification(expoPushToken: string, title: string, body: string, data: any) {
+    const message = {
+      to: expoPushToken,
+      title,
+      body,
+      data,
+    };
+
+    try {
+      // Send the push notification
+      await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Encoding": "gzip, deflate",
+        },
+        body: JSON.stringify(message),
+      });
+      console.log("Push notification sent successfully");
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+    }
+  }
+
   return (
     <div className="flex flex-col w-screen md:h-full px-32 bg-backgroundLight dark:bg-backgroundDark text-backgroundDark dark:text-backgroundLight overflow-x-hidden">
       <NavBar
