@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import NavBar from "../components/navBar";
-import { clearUserTransaction, getUserNotificationToken, sessionDetails, setUserTransaction } from "../hooks/firebase";
+import { clearUserTransaction, getUserNotificationToken, sessionDetails } from "../hooks/firebase";
 import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
