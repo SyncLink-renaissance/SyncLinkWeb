@@ -226,6 +226,22 @@ export const getUserConnectedWallets = async (userId: string) => {
   }
 };
 
+export const getUserNotificationToken = async (userId: string) => {
+  const UserRef = doc(db, "users", userId);
+  try {
+    const docSnap = await getDoc(UserRef);
+    if (docSnap.exists()) {
+      return docSnap.data()?.notificationToken; // Returns the notificationToken
+    } else {
+      console.log("No such User!");
+      return null; // Handle case where session does not exist
+    }
+  } catch (error) {
+    console.error("Error fetching User info:", error);
+    return null; // Handle error
+  }
+};
+
 export async function getCategoryDetails(userId: string, categoryName: string) {
   const UserRef = doc(db, "users", userId);
   try {

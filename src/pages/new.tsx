@@ -1,13 +1,42 @@
 import { useEffect, useState } from "react";
 
 import NavBar from "../components/navBar";
-import { clearUserTransaction, sessionDetails, setUserTransaction } from "../hooks/firebase";
+import { clearUserTransaction, getUserNotificationToken, sessionDetails, setUserTransaction } from "../hooks/firebase";
 import { Connection, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { Check, X, XCircle } from "lucide-react";
 import fullLogo from "../assets/images/fullLogo.png";
 
+export async function sendPushNotification(expoPushToken: string, title: string, body: string, data: any) {
+  const message = {
+    to: expoPushToken,
+    sound: "default",
+    title,
+    body,
+    data,
+  };
+
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+}
+
+export function shortenSolanaAddress(address: string): string {
+  // Check if the address length is more than 8 characters to require shortening
+  if (address) {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  } else {
+    // If the address is already short, return it as is
+    return "Undifined";
+  }
+}
 const NewPage = () => {
   const connection = new Connection("https://mainnet.helius-rpc.com/?api-key=aa904a60-705f-4811-beab-cb00d288cc65");
 
@@ -98,7 +127,7 @@ const NewPage = () => {
         </button>
       </div>
       <h1 className="text-xl text-textLight font-semibold text-left mb-2  ">2. Manage connection</h1>
-      <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4  ">
+      <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4 z-0  ">
         this will explain to the tester how to manage the connection,blajn uh dj sl;ldps plps
       </h1>
       <div className="w-full flex justify-start">
@@ -136,7 +165,24 @@ const NewPage = () => {
             });
             const encodedTransaction = Buffer.from(serializedTransaction).toString("base64");
             console.log("Tx:", encodedTransaction);
-            await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
+            // await setUserTransaction(encodedTransaction, connectedSessionDetails?.ConnectedUserId || "", sessionId);
+
+            // send notification
+            const expoPushToken = await getUserNotificationToken(connectedSessionDetails.ConnectedUserId);
+            alert(expoPushToken);
+            if (expoPushToken)
+              await sendPushNotification(
+                expoPushToken,
+                `${document.title} - transaction`,
+                `Click to confirm the transaction from ${document.title} with ${shortenSolanaAddress(pk.toBase58())}`,
+                {
+                  action:
+                    connectedSessionDetails?.selected_wallet.walletApp.toLowerCase() === "phantom"
+                      ? "signAndSendTransactionPhantom"
+                      : "signAndSendTransactionSolflare",
+                  data: { serializedTx: serializedTransaction, wallet: connectedSessionDetails?.selected_wallet.pk },
+                }
+              );
             setOpeningTransactionModal(false);
             setTransactionModalOpen(true);
           }}
