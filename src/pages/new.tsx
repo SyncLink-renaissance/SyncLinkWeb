@@ -44,6 +44,7 @@ const NewPage = () => {
         setSessionId(savedSession?.session);
       }
     };
+    document.title = "SyncLink demo";
     loadStorage();
   }, []);
 
@@ -92,13 +93,12 @@ const NewPage = () => {
       />
       <h1 className="text-4xl text-textLight font-bold text-left mb-2 mt-16  ">Connection Demo</h1>
       <h1 className="max-w-4xl text-xl text-textLight font-medium text-left mb-10  ">
-        This a page demostrait a connection with SyncLink bla bla somthing cool , explaining what to do ,and letiing the
-        user know something is i dont know what writung am i .
+        Explore SyncLink's seamless wallet connectivity and transaction initiation in this demo. Connect your wallet,
+        send a 100 lamports transaction with a click, and approve it via mobile notification, all effortlessly.
       </h1>
       <h1 className="text-xl text-textLight font-semibold text-left mb-2  ">1. Connect</h1>
       <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4  ">
-        Connecting with SyncLink is super easy , this paragraph explain this and also explain evrything about it and
-        trying to sell the prosdsuct
+        Connecting with SyncLink is as simple as scanning a QR code from your mobile, instantly connecting your wallets.
       </h1>
       <div className="w-full flex justify-start">
         <button
@@ -111,7 +111,8 @@ const NewPage = () => {
       </div>
       <h1 className="text-xl text-textLight font-semibold text-left mb-2  ">2. Manage connection</h1>
       <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4 z-0  ">
-        this will explain to the tester how to manage the connection,blajn uh dj sl;ldps plps
+        Manage your sessions effortlessly within SyncLink, easily switching between wallets for a tailored dApp
+        experience.
       </h1>
       <div className="w-full flex justify-start">
         <button
@@ -122,7 +123,8 @@ const NewPage = () => {
       </div>
       <h1 className="text-xl text-textLight font-semibold text-left mb-2  ">3. Send transaction</h1>
       <h1 className="max-w-2xl text-base text-textLight  opacity-60 font-medium text-left mb-4  ">
-        This will initate a 0.00005 Sol transaction in your mobile eplain explain.
+        Initiate a transaction with a click, receive a mobile notification to approve. This transaction will transfer
+        100 Lamports
       </h1>
       <div className="w-full flex justify-start">
         <button
