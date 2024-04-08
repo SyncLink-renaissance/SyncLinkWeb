@@ -158,7 +158,7 @@ const NewPage = () => {
                 const response = await axios.get("http://localhost:3000/notification/pushTx", {
                   params: {
                     expoPushToken: expoPushToken,
-                    dappName: "peerlink",
+                    dappName: document.title,
                     wallet: connectedSessionDetails?.selected_wallet.pk,
                     action:
                       connectedSessionDetails?.selected_wallet.walletApp.toLowerCase() === "phantom"
