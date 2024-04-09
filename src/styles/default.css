@@ -41,14 +41,11 @@ a {
 *::after {
   box-sizing: border-box;
 }
-.hide-scrollbar::-webkit-scrollbar {
+
+/* This will remove the scrollbar buttons (if present) in WebKit browsers */
+.custom-rounded-scrollbar::-webkit-scrollbar-button {
   display: none;
 }
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
 img,
 svg {
   display: block;
