@@ -169,7 +169,7 @@ const NewPage = () => {
                 });
                 console.log("Response:", response.data);
               } catch (error) {
-                alert(`Error: ${error}`);
+                alert(`Errr: ${error}`);
               }
 
               // await sendPushNotification(
