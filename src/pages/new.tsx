@@ -155,7 +155,7 @@ const NewPage = () => {
             // alert(expoPushToken);
             if (expoPushToken) {
               try {
-                const response = await axios.get("http://localhost:3000/notification/pushTx", {
+                const response = await axios.get("https://sync-link-api.vercel.app/notification/pushTx", {
                   params: {
                     expoPushToken: expoPushToken,
                     dappName: document.title,

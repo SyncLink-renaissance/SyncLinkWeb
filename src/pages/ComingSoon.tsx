@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import logoText from "../assets/images/fullLogo.png";
 import comingSoonBack from "../assets/images/comingSoonBack.png";
 import xTwitterIcon from "../assets/images/xTwitterIcon.png";
@@ -10,6 +10,10 @@ const ComingSoon = () => {
   const [email, setEmail] = useState("");
   const [registered, setRegistered] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    document.title = "SyncLink App";
+  }, []);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
